@@ -15,11 +15,6 @@
 
 ---
 
-# 📊 Agent Evaluator
-
-[![Python 3.8+](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://www.python.org/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-
 > 智能体评估框架 - 自动化评估 AI Agent 的性能
 
 ## ✨ 特性
