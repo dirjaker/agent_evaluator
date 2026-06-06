@@ -1,3 +1,20 @@
+<div align="center">
+
+# 📊 Agent Evaluator
+
+### Agent 性能评估框架
+
+[![评估维度](https://img.shields.io/badge/评估维度-5+-blue?style=flat-square)]()
+[![指标](https://img.shields.io/badge/指标-10+-green?style=flat-square)]()
+[![框架](https://img.shields.io/badge/框架-Pydantic-orange?style=flat-square)]()
+[![更新](https://img.shields.io/badge/更新-2025.06-red?style=flat-square)]()
+
+*多维度 Agent 评估 · 响应质量 · 安全性 · 成本分析 · 自动化测试*
+
+</div>
+
+---
+
 # 📊 Agent Evaluator
 
 [![Python 3.8+](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://www.python.org/)
@@ -190,3 +207,4 @@ python examples/eval_demo.py
 ## 📄 License
 
 MIT License
+
