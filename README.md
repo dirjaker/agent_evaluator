@@ -195,9 +195,49 @@ python examples/eval_demo.py
 - [方向指引](DIRECTION.md) - 项目规划、学习路径
 - [版本记录](VERSION.md) - 更新日志
 
+## Web 评估面板
+
+提供基于 FastAPI 的 Web 评估面板，可通过浏览器执行评估、运行基准测试和查看历史记录。
+
+```bash
+# 启动评估面板
+python src/web/app.py
+
+# 访问 Dashboard
+# http://localhost:8004
+```
+
+### Web API 接口
+
+| 接口 | 方法 | 说明 |
+|------|------|------|
+| `/api/evaluate` | POST | 执行单个评估 |
+| `/api/evaluations` | GET | 获取评估历史 |
+| `/api/benchmark` | POST | 运行基准测试 |
+| `/api/benchmarks` | GET | 获取基准测试历史 |
+| `/api/datasets` | GET | 列出可用数据集 |
+| `/api/datasets/{name}` | GET | 获取数据集详情 |
+| `/api/stats` | GET | 获取统计信息 |
+
+## macOS 桌面应用
+
+提供基于 tkinter 的本地桌面窗口，可一键启动 Web 服务。
+
+```bash
+python src/macos/app.py
+```
+
+## 打包 macOS .app
+
+```bash
+pip install py2app
+python packaging/py2app_setup.py py2app
+# 产出: dist/Agent评估框架.app
+```
+
 ## 🤝 贡献
 
-欢迎提交 Issue 和 Pull Request！
+欢迎提交 Issue 和 Pull Request!
 
 ## 📄 License
 

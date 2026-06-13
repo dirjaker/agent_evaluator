@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agent 评估框架</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0d1117;--surface:#161b22;--border:#30363d;--text:#c9d1d9;--text2:#8b949e;--accent:#58a6ff;--green:#3fb950;--red:#f85149;--yellow:#d29922;--purple:#bc8cff}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+.header{background:var(--surface);border-bottom:1px solid var(--border);padding:16px 24px;display:flex;align-items:center;justify-content:space-between}
+.header h1{font-size:20px;font-weight:600;color:var(--accent)}
+
+.container{max-width:1100px;margin:0 auto;padding:24px}
+
+.tabs{display:flex;background:var(--surface);border:1px solid var(--border);border-radius:8px 8px 0 0;overflow:hidden}
+.tab{padding:12px 24px;font-size:13px;cursor:pointer;color:var(--text2);border-bottom:2px solid transparent;transition:all 0.15s}
+.tab.active{color:var(--accent);border-color:var(--accent);background:rgba(88,166,255,0.05)}
+.tab-content{display:none;background:var(--surface);border:1px solid var(--border);border-top:none;border-radius:0 0 8px 8px;padding:24px}
+.tab-content.active{display:block}
+
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:20px}
+.stat-item{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center}
+.stat-value{font-size:22px;font-weight:700;color:var(--accent)}
+.stat-label{font-size:11px;color:var(--text2);margin-top:3px}
+
+.form-group{margin-bottom:14px}
+.form-label{display:block;font-size:12px;color:var(--text2);margin-bottom:4px}
+.form-input,.form-select{width:100%;padding:8px 12px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;outline:none;font-family:inherit}
+.form-input:focus,.form-select:focus{border-color:var(--accent)}
+textarea.form-input{min-height:70px;resize:vertical}
+
+.btn{padding:8px 16px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);font-size:13px;cursor:pointer;transition:all 0.15s}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn-primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn-primary:hover{opacity:0.85}
+.btn-danger{color:var(--red);border-color:var(--red)}
+.btn-block{width:100%}
+
+.result-card{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:12px}
+.result-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.result-title{font-size:14px;font-weight:500}
+.result-score{font-size:20px;font-weight:700;color:var(--accent)}
+
+.metric-bar{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.metric-name{width:80px;font-size:12px;color:var(--text2)}
+.metric-track{flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden}
+.metric-fill{height:100%;border-radius:3px;transition:width 0.5s}
+.metric-val{width:40px;font-size:12px;text-align:right;font-family:monospace}
+
+.dataset-card{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:10px;cursor:pointer;transition:border-color 0.15s}
+.dataset-card:hover{border-color:var(--accent)}
+.dataset-name{font-size:14px;font-weight:500;color:var(--accent)}
+.dataset-desc{font-size:12px;color:var(--text2);margin-top:4px}
+
+.history-list{list-style:none;max-height:400px;overflow-y:auto}
+.history-item{padding:10px 14px;border:1px solid var(--border);border-radius:6px;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between}
+.history-score{font-size:16px;font-weight:700;font-family:monospace}
+.score-high{color:var(--green)}
+.score-mid{color:var(--yellow)}
+.score-low{color:var(--red)}
+
+.empty{text-align:center;padding:32px;color:var(--text2);font-size:13px}
+.footer{text-align:center;padding:20px;color:var(--text2);font-size:12px}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Agent 评估框架</h1>
+  <span style="font-size:12px;color:var(--text2)">多维度评估 / 基准测试 / 自动化分析</span>
+</div>
+
+<div class="container">
+  <div class="tabs">
+    <div class="tab active" data-tab="evaluate" onclick="switchTab(this)">评估</div>
+    <div class="tab" data-tab="benchmark" onclick="switchTab(this)">基准测试</div>
+    <div class="tab" data-tab="datasets" onclick="switchTab(this)">数据集</div>
+    <div class="tab" data-tab="history" onclick="switchTab(this)">历史记录</div>
+  </div>
+
+  <!-- 评估 -->
+  <div id="tab-evaluate" class="tab-content active">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+      <div>
+        <h3 style="color:var(--accent);margin-bottom:14px">输入评估参数</h3>
+        <div class="form-group">
+          <label class="form-label">测试 ID</label>
+          <input class="form-input" id="eval-id" placeholder="test_001" value="test_001">
+        </div>
+        <div class="form-group">
+          <label class="form-label">用户输入</label>
+          <textarea class="form-input" id="eval-input" placeholder="输入用户的问题或指令"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">期望输出</label>
+          <textarea class="form-input" id="eval-expected" placeholder="期望 Agent 返回的正确答案"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">实际输出</label>
+          <textarea class="form-input" id="eval-actual" placeholder="Agent 实际返回的答案"></textarea>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div class="form-group">
+            <label class="form-label">评估方法</label>
+            <select class="form-select" id="eval-type">
+              <option value="rule">规则评估</option>
+              <option value="llm">LLM 评估</option>
+              <option value="composite">组合评估</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">难度</label>
+            <select class="form-select" id="eval-difficulty">
+              <option value="easy">简单</option>
+              <option value="medium" selected>中等</option>
+              <option value="hard">困难</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn btn-primary btn-block" onclick="runEvaluate()">执行评估</button>
+      </div>
+      <div>
+        <h3 style="color:var(--accent);margin-bottom:14px">评估结果</h3>
+        <div id="eval-result">
+          <div class="empty">执行评估后显示结果</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 基准测试 -->
+  <div id="tab-benchmark" class="tab-content">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+      <div>
+        <h3 style="color:var(--accent);margin-bottom:14px">基准测试配置</h3>
+        <div class="form-group">
+          <label class="form-label">数据集</label>
+          <select class="form-select" id="bench-dataset">
+            <option value="sample">通用问答测试集</option>
+            <option value="coding">编程能力测试集</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">评估方法</label>
+          <select class="form-select" id="bench-eval-type">
+            <option value="rule">规则评估</option>
+            <option value="llm">LLM 评估</option>
+            <option value="composite">组合评估</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">重复次数</label>
+          <input class="form-input" id="bench-reps" type="number" value="1" min="1" max="10">
+        </div>
+        <button class="btn btn-primary btn-block" id="bench-btn" onclick="runBenchmark()">运行基准测试</button>
+        <div id="bench-status" style="margin-top:10px;font-size:12px;color:var(--text2)"></div>
+      </div>
+      <div>
+        <h3 style="color:var(--accent);margin-bottom:14px">测试结果</h3>
+        <div id="bench-result">
+          <div class="empty">运行基准测试后显示结果</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 数据集 -->
+  <div id="tab-datasets" class="tab-content">
+    <h3 style="color:var(--accent);margin-bottom:14px">可用数据集</h3>
+    <div id="datasets-list">加载中...</div>
+  </div>
+
+  <!-- 历史 -->
+  <div id="tab-history" class="tab-content">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <h3 style="color:var(--accent)">评估历史</h3>
+      <button class="btn btn-danger btn-sm" onclick="clearHistory()">清空</button>
+    </div>
+    <div id="history-stats" class="stats-grid" style="margin-bottom:16px"></div>
+    <ul class="history-list" id="history-list">
+      <li class="empty">暂无评估记录</li>
+    </ul>
+  </div>
+</div>
+
+<div class="footer">Agent 评估框架 -- Web Dashboard</div>
+
+<script>
+const API='';
+
+function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML}
+
+function switchTab(el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tab-'+el.dataset.tab).classList.add('active');
+}
+
+function scoreClass(s){return s>=0.7?'score-high':s>=0.4?'score-mid':'score-low'}
+
+function metricColor(s){return s>=0.7?'var(--green)':s>=0.4?'var(--yellow)':'var(--red)'}
+
+async function runEvaluate(){
+  const data={
+    test_id:document.getElementById('eval-id').value.trim()||'test_001',
+    input_text:document.getElementById('eval-input').value.trim(),
+    expected_output:document.getElementById('eval-expected').value.trim(),
+    actual_output:document.getElementById('eval-actual').value.trim(),
+    eval_type:document.getElementById('eval-type').value,
+    difficulty:document.getElementById('eval-difficulty').value,
+  };
+  if(!data.input_text||!data.expected_output||!data.actual_output){alert('请填写所有字段');return}
+
+  try{
+    const res=await fetch(API+'/api/evaluate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+    const r=await res.json();
+    renderEvalResult(r);
+    loadHistory();
+  }catch(e){alert('评估失败: '+e.message)}
+}
+
+function renderEvalResult(r){
+  const el=document.getElementById('eval-result');
+  let html=`<div class="result-card">
+    <div class="result-header">
+      <span class="result-title">${esc(r.test_id)}</span>
+      <span class="result-score ${scoreClass(r.total_score)}">${(r.total_score*100).toFixed(1)}%</span>
+    </div>`;
+  r.metrics.forEach(m=>{
+    html+=`<div class="metric-bar">
+      <span class="metric-name">${esc(m.metric)}</span>
+      <div class="metric-track"><div class="metric-fill" style="width:${m.score*100}%;background:${metricColor(m.score)}"></div></div>
+      <span class="metric-val">${(m.score*100).toFixed(0)}%</span>
+    </div>`;
+  });
+  html+='</div>';
+  el.innerHTML=html;
+}
+
+async function runBenchmark(){
+  const btn=document.getElementById('bench-btn');
+  const status=document.getElementById('bench-status');
+  btn.disabled=true;btn.textContent='运行中...';status.textContent='正在执行基准测试...';
+
+  const data={
+    dataset_name:document.getElementById('bench-dataset').value,
+    eval_type:document.getElementById('bench-eval-type').value,
+    repetitions:parseInt(document.getElementById('bench-reps').value)||1,
+  };
+
+  try{
+    const res=await fetch(API+'/api/benchmark',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+    const r=await res.json();
+    renderBenchmarkResult(r);
+    status.textContent='测试完成';
+    loadHistory();
+  }catch(e){status.textContent='测试失败: '+e.message}
+  finally{btn.disabled=false;btn.textContent='运行基准测试'}
+}
+
+function renderBenchmarkResult(r){
+  const el=document.getElementById('bench-result');
+  const s=r.summary;
+  let html=`<div class="result-card">
+    <div class="result-header">
+      <span class="result-title">${esc(s.name)}</span>
+      <span class="result-score ${scoreClass(s.total_score)}">${(s.total_score*100).toFixed(1)}%</span>
+    </div>
+    <div class="stats-grid" style="margin-top:10px">
+      <div class="stat-item"><div class="stat-value">${s.total_cases}</div><div class="stat-label">测试用例</div></div>
+      <div class="stat-item"><div class="stat-value">${s.avg_latency.toFixed(2)}s</div><div class="stat-label">平均延迟</div></div>
+      <div class="stat-item"><div class="stat-value">${s.total_tokens}</div><div class="stat-label">总 Token</div></div>
+      <div class="stat-item"><div class="stat-value">${s.duration.toFixed(1)}s</div><div class="stat-label">总耗时</div></div>
+    </div>`;
+
+  if(s.metric_avg){
+    html+='<div style="margin-top:12px">';
+    for(const [k,v] of Object.entries(s.metric_avg)){
+      html+=`<div class="metric-bar">
+        <span class="metric-name">${esc(k)}</span>
+        <div class="metric-track"><div class="metric-fill" style="width:${v*100}%;background:${metricColor(v)}"></div></div>
+        <span class="metric-val">${(v*100).toFixed(0)}%</span>
+      </div>`;
+    }
+    html+='</div>';
+  }
+
+  if(s.difficulty_stats){
+    html+='<div style="margin-top:12px;font-size:12px">';
+    for(const [k,v] of Object.entries(s.difficulty_stats)){
+      html+=`<div style="padding:3px 0;color:var(--text2)">${esc(k)}: ${v.count} 个用例, 平均 ${(v.avg_score*100).toFixed(1)}%</div>`;
+    }
+    html+='</div>';
+  }
+
+  html+='</div>';
+  el.innerHTML=html;
+}
+
+async function loadDatasets(){
+  try{
+    const res=await fetch(API+'/api/datasets');
+    const data=await res.json();
+    const el=document.getElementById('datasets-list');
+    el.innerHTML=data.datasets.map(d=>`
+      <div class="dataset-card" onclick="loadDatasetDetail('${esc(d.name)}')">
+        <div class="dataset-name">${esc(d.display_name)}</div>
+        <div class="dataset-desc">${esc(d.description)} -- ${d.cases} 个测试用例</div>
+      </div>
+    `).join('');
+  }catch(e){console.error(e)}
+}
+
+async function loadDatasetDetail(name){
+  try{
+    const res=await fetch(API+'/api/datasets/'+name);
+    const data=await res.json();
+    const el=document.getElementById('datasets-list');
+    let html=`<button class="btn btn-sm" onclick="loadDatasets()" style="margin-bottom:12px">返回列表</button>
+      <h3 style="color:var(--accent);margin-bottom:10px">${esc(data.name)}</h3>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:14px">${esc(data.description)}</p>`;
+    data.cases.forEach(c=>{
+      html+=`<div class="result-card">
+        <div style="font-size:13px"><strong>${esc(c.id)}</strong> <span style="color:var(--text2)">[${esc(c.difficulty)}]</span></div>
+        <div style="font-size:12px;color:var(--text2);margin-top:4px">输入: ${esc(c.input)}</div>
+        <div style="font-size:12px;color:var(--text2);margin-top:2px">期望: ${esc(c.expected_output)}</div>
+        ${c.tags.length?`<div style="margin-top:4px">${c.tags.map(t=>'<span style="font-size:10px;padding:2px 6px;background:var(--border);border-radius:3px;margin-right:4px">'+esc(t)+'</span>').join('')}</div>`:''}
+      </div>`;
+    });
+    el.innerHTML=html;
+  }catch(e){console.error(e)}
+}
+
+async function loadHistory(){
+  try{
+    const res=await fetch(API+'/api/evaluations?limit=100');
+    const data=await res.json();
+    const el=document.getElementById('history-list');
+    const statsEl=document.getElementById('history-stats');
+
+    if(!data.evaluations.length){
+      el.innerHTML='<li class="empty">暂无评估记录</li>';
+      statsEl.innerHTML='';
+      return;
+    }
+
+    // 统计
+    const scores=data.evaluations.map(e=>e.total_score);
+    const avg=scores.reduce((a,b)=>a+b,0)/scores.length;
+    const max=Math.max(...scores);
+    const min=Math.min(...scores);
+    statsEl.innerHTML=`
+      <div class="stat-item"><div class="stat-value">${data.total}</div><div class="stat-label">总评估数</div></div>
+      <div class="stat-item"><div class="stat-value">${(avg*100).toFixed(1)}%</div><div class="stat-label">平均得分</div></div>
+      <div class="stat-item"><div class="stat-value">${(max*100).toFixed(1)}%</div><div class="stat-label">最高得分</div></div>
+      <div class="stat-item"><div class="stat-value">${(min*100).toFixed(1)}%</div><div class="stat-label">最低得分</div></div>
+    `;
+
+    el.innerHTML=data.evaluations.slice().reverse().map(e=>`
+      <li class="history-item">
+        <div>
+          <div style="font-size:13px">${esc(e.test_id)} <span style="color:var(--text2)">[${esc(e.eval_type)}]</span></div>
+          <div style="font-size:11px;color:var(--text2)">${new Date(e.timestamp).toLocaleString()}</div>
+        </div>
+        <span class="history-score ${scoreClass(e.total_score)}">${(e.total_score*100).toFixed(1)}%</span>
+      </li>
+    `).join('');
+  }catch(e){console.error(e)}
+}
+
+async function clearHistory(){
+  if(!confirm('确定清空评估历史？'))return;
+  try{
+    await fetch(API+'/api/evaluations/clear',{method:'POST'});
+    loadHistory();
+  }catch(e){alert('清空失败')}
+}
+
+// 初始化
+loadDatasets();loadHistory();
+</script>
+</body>
+</html>
