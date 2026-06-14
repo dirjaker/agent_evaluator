@@ -22,3 +22,7 @@ Thumbs.db
 .vscode/
 *.swp
 *.swo
+
+# VitePress build output
+docs/.vitepress/dist/
+docs/.vitepress/cache/
