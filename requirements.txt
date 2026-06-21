@@ -1,10 +1,7 @@
-# Agent 评估框架 - 依赖列表
+# agent_evaluator - Python 依赖
+# 自动生成于 conda 环境
 
-# === 核心依赖 ===
-rich>=13.0.0
-httpx>=0.25.0
-pydantic>=2.0.0
-
-# === Web Dashboard ===
-fastapi>=0.100.0
-uvicorn>=0.20.0
+httpx==0.28.1
+pydantic==2.13.4
+pydantic_core==2.46.4
+typing_extensions==4.15.0
