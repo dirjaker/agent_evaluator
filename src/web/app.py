@@ -4,6 +4,7 @@ FastAPI 服务，暴露评估框架的 REST API
 """
 
 import sys
+import os
 import uuid
 from pathlib import Path
 from datetime import datetime
@@ -24,9 +25,10 @@ sys.path.insert(0, str(PROJECT_ROOT))
 # ============================================================
 
 app = FastAPI(title="Agent Evaluator", version="1.0.0")
+CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://localhost,http://127.0.0.1").split(",")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=CORS_ORIGINS,
     allow_methods=["*"],
     allow_headers=["*"],
 )
